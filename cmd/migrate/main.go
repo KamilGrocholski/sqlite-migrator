@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	sqliteutils "github.com/KamilGrocholski/sqlite-utils"
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/KamilGrocholski/sqlite-utils/internal/migrator"
 )
 
 func main() {
@@ -19,22 +20,21 @@ func main() {
 }
 
 func run() error {
-	migrationsTable := flag.String("table", "__migration", "migration table name")
-	migrationsDir := flag.String("migrations", "migrations", "migrations directory")
-	sqliteFilePath := flag.String("db", ":memory:", "sqlite file path")
+	migrationsDir := flag.String("dir", "migrations", "migrations directory")
+	migrationsTable := flag.String("table", "__migration", "migrations table name")
+	dbName := flag.String("db", ":memory:", "sqlite filepath")
 	flag.Parse()
 
-	db, err := sql.Open("sqlite3", *sqliteFilePath)
+	db, err := sql.Open("sqlite3", *dbName)
 	if err != nil {
 		return err
 	}
 
-	migrator := sqliteutils.Migrator{
+	migrator := migrator.Migrator{
+		Dir:   *migrationsDir,
+		Table: *migrationsTable,
 		DB:    db,
-		DIR:   *migrationsDir,
-		TABLE: *migrationsTable,
 	}
-
 	err = migrator.Migrate()
 	if err != nil {
 		return err

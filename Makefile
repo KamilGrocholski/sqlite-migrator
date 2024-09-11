@@ -1,4 +1,4 @@
-run:
+_run-default:
 	go run cmd/migrate/main.go
 
 build:
