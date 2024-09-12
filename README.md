@@ -3,7 +3,7 @@
 ## Build
 
 ```bash
-make build
+go build -o migrate cmd/migrate/main.go
 ```
 
 ## Create '001_create_user_table.sql' file inside 'migrations_dir'
