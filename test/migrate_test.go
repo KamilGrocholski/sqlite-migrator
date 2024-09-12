@@ -16,6 +16,7 @@ func TestSimpleMigrate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.RemoveAll(migrationsDir)
 	migrationsTable := "test__migration"
 	dbName := ":memory:"
 
