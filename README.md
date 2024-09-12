@@ -23,3 +23,23 @@ drop table if exists user;
 ```bash
 ./migrate -db sqlite_file -dir migrations_dir -table __migration
 ```
+
+## Check the results
+
+### Connect to the db
+
+```bash
+sqlite3 sqlite_file
+```
+
+### Show tables
+
+```bash
+.tables
+```
+
+### Show migration rows in '\_\_migration' table
+
+```bash
+select * from __migration;
+```
