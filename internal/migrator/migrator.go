@@ -72,7 +72,7 @@ func (m *Migrator) Migrate() error {
 		}
 		err = m.dbDeleteMigration(tx, dbMigration.ID)
 		if err != nil {
-			return migrationError(err, "failed_db_db_migration_deleting", dbMigration)
+			return migrationError(err, "failed_down_db_migration_deleting", dbMigration)
 		}
 	}
 
@@ -96,7 +96,7 @@ func (m *Migrator) Migrate() error {
 func (m *Migrator) readFileMigrations() ([]*Migration, MigrationsMap, error) {
 	entries, err := os.ReadDir(m.Dir)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed_reading_migrations_dir: %w", err)
 	}
 
 	migrations := make([]*Migration, 0, len(entries))
@@ -167,7 +167,7 @@ func (m *Migrator) dbUpsertMigrationTable(tx *sql.Tx) error {
 func (m *Migrator) dbGetMigrations(tx *sql.Tx) ([]*Migration, error) {
 	var migrations []*Migration
 	rows, err := tx.Query(fmt.Sprintf(`
-        select id, filename, up, down from %s order by id ASC;
+        select id, filename, up, down from %s order by id asc;
     `, m.Table))
 	if err != nil {
 		return nil, err
