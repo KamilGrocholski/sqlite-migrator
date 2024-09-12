@@ -2,6 +2,7 @@ package migrator
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -21,6 +22,19 @@ type Migration struct {
 	Filename string `json:"filename"`
 	Up       string `json:"up"`
 	Down     string `json:"down"`
+}
+
+func (m *Migration) Pretty() (string, error) {
+	pretty, err := json.MarshalIndent(m, "", "    ")
+	return string(pretty), err
+}
+
+func migrationError(cause error, desc string, migration *Migration) error {
+	pretty, err := migration.Pretty()
+	if err != nil {
+		return fmt.Errorf("desc: %s\ncause: %w\nmigration:%w\n", desc, cause, err)
+	}
+	return fmt.Errorf("desc: %s\ncause: %w\nmigration:\n%s\n", desc, cause, pretty)
 }
 
 type MigrationsMap map[uint64]*Migration
@@ -54,11 +68,11 @@ func (m *Migrator) Migrate() error {
 		}
 		_, err := tx.Exec(dbMigration.Down)
 		if err != nil {
-			return fmt.Errorf("failed_down_db_migration_execution: %w", err)
+			return migrationError(err, "failed_down_db_migration_execution", dbMigration)
 		}
 		err = m.dbDeleteMigration(tx, dbMigration.ID)
 		if err != nil {
-			return fmt.Errorf("failed_db_db_migration_deleting: %w", err)
+			return migrationError(err, "failed_db_db_migration_deleting", dbMigration)
 		}
 	}
 
@@ -68,11 +82,11 @@ func (m *Migrator) Migrate() error {
 		}
 		_, err := tx.Exec(fileMigration.Up)
 		if err != nil {
-			return fmt.Errorf("failed_up_file_migration_execution: %w", err)
+			return migrationError(err, "failed_up_file_migration_execution", fileMigration)
 		}
 		err = m.dbInsertMigration(tx, fileMigration)
 		if err != nil {
-			return fmt.Errorf("failed_up_file_migration_insert: %w", err)
+			return migrationError(err, "failed_up_file_migration_insert", fileMigration)
 		}
 	}
 
@@ -121,10 +135,12 @@ func (m *Migrator) parseFileMigrationEntry(entry fs.DirEntry) (*Migration, error
 	if !ok {
 		return nil, fmt.Errorf("invalid_migration_file_content_format: expected '-- migrate: down'")
 	}
+	down = strings.TrimSpace(down)
 	up, ok = strings.CutPrefix(up, "-- migrate: up")
 	if !ok {
 		return nil, fmt.Errorf("invalid_migration_file_content_format: expected '-- migrate: up'")
 	}
+	up = strings.TrimSpace(up)
 
 	migration := &Migration{
 		ID:       id,
